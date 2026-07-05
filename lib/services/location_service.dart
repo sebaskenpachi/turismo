@@ -16,6 +16,8 @@ class LocationService {
       throw Exception('No tenemos permiso de ubicación. Actívalo para recomendar lugares cercanos.');
     }
 
-    return Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    return Geolocator.getCurrentPosition(
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+    );
   }
 }

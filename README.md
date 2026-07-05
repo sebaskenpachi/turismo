@@ -19,6 +19,30 @@ Rutas Panamá es un concierge turístico inteligente que recomienda rutas, lugar
 - Google Places API
 - Supabase
 
+## Sprint 0: ejecutar en Android
+
+Requisitos locales:
+- Flutter SDK instalado.
+- Android SDK instalado.
+- Un emulador Android o teléfono Android conectado.
+
+Comandos:
+
+```bash
+flutter pub get
+flutter analyze
+flutter test
+flutter run
+```
+
+Para probar el mapa sin quemar llaves en Git, configura la llave de Google Maps en `android/local.properties`, archivo que está ignorado por Git:
+
+```properties
+GOOGLE_MAPS_API_KEY=tu_api_key_android_restringida
+```
+
+También puedes usar una variable de entorno `GOOGLE_MAPS_API_KEY` en el entorno de build. No subas llaves reales de Google, Supabase ni OpenAI al repositorio.
+
 ## Primer paso con Codex
 Abrir el proyecto en Codex y ejecutar la tarea:
 

@@ -1,0 +1,18 @@
+name: rutas_panama_mvp
+description: MVP de asistente turistico inteligente para Panama con GPS, rutas y recomendaciones.
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  google_maps_flutter: ^2.17.0
+  geolocator: ^14.0.2
+  url_launcher: ^6.3.1
+
+flutter:
+  uses-material-design: true

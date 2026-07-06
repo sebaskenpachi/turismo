@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:latlong2/latlong.dart' as latlong;
 import 'package:url_launcher/url_launcher.dart';
 import '../data/panama_routes.dart';
 import '../models/place_item.dart';
@@ -24,10 +25,12 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  GoogleMapController? _mapController;
+  final MapController _mapController = MapController();
   Position? _userPosition;
   LocationException? _locationError;
   bool _isLoadingLocation = true;
+
+  latlong.LatLng get _routeCenter => latlong.LatLng(widget.route.latitude, widget.route.longitude);
 
   @override
   void initState() {
@@ -41,21 +44,21 @@ class _MapScreenState extends State<MapScreen> {
       appBar: AppBar(title: const Text('Mapa de ruta')),
       body: Stack(
         children: [
-          GoogleMap(
-            initialCameraPosition: CameraPosition(
-              target: LatLng(widget.route.latitude, widget.route.longitude),
-              zoom: 14,
+          FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: _routeCenter,
+              initialZoom: 14,
+              maxZoom: 18,
+              minZoom: 3,
             ),
-            markers: _markers,
-            myLocationEnabled: _userPosition != null,
-            myLocationButtonEnabled: _userPosition != null,
-            onMapCreated: (controller) {
-              _mapController = controller;
-              final userPosition = _userPosition;
-              if (userPosition != null) {
-                _moveCameraToUser(userPosition);
-              }
-            },
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.rutaspanama.mvp',
+              ),
+              MarkerLayer(markers: _markers),
+            ],
           ),
           Positioned(
             left: 12,
@@ -70,6 +73,20 @@ class _MapScreenState extends State<MapScreen> {
               onOpenLocationSettings: _openLocationSettings,
             ),
           ),
+          Positioned(
+            left: 12,
+            bottom: 12,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface.withAlpha(230),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: Text('© OpenStreetMap contributors', style: TextStyle(fontSize: 11)),
+              ),
+            ),
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -80,30 +97,37 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  Set<Marker> get _markers {
+  List<Marker> get _markers {
     final routeMarkers = touristRoutes.map((touristRoute) {
       final isSelectedRoute = touristRoute.id == widget.route.id;
       return Marker(
-        markerId: MarkerId('route_${touristRoute.id}'),
-        position: LatLng(touristRoute.latitude, touristRoute.longitude),
-        icon: BitmapDescriptor.defaultMarkerWithHue(
-          isSelectedRoute ? BitmapDescriptor.hueAzure : BitmapDescriptor.hueRed,
-        ),
-        infoWindow: InfoWindow(
-          title: touristRoute.name,
-          snippet: isSelectedRoute ? 'Ruta seleccionada' : 'Ruta inicial',
+        point: latlong.LatLng(touristRoute.latitude, touristRoute.longitude),
+        width: 48,
+        height: 48,
+        child: Tooltip(
+          message: isSelectedRoute ? '${touristRoute.name} · ruta seleccionada' : touristRoute.name,
+          child: Icon(
+            Icons.location_on,
+            size: isSelectedRoute ? 46 : 40,
+            color: isSelectedRoute ? Colors.blue : Colors.red,
+          ),
         ),
       );
     });
 
     final placeMarkers = widget.places.map((place) {
       return Marker(
-        markerId: MarkerId('place_${place.id}'),
-        position: LatLng(place.latitude, place.longitude),
-        icon: BitmapDescriptor.defaultMarkerWithHue(
-          place.sponsored ? BitmapDescriptor.hueYellow : BitmapDescriptor.hueGreen,
+        point: latlong.LatLng(place.latitude, place.longitude),
+        width: 44,
+        height: 44,
+        child: Tooltip(
+          message: '${place.name} · ${place.category}',
+          child: Icon(
+            place.sponsored ? Icons.star : Icons.place,
+            size: 36,
+            color: place.sponsored ? Colors.amber : Colors.green,
+          ),
         ),
-        infoWindow: InfoWindow(title: place.name, snippet: place.category),
       );
     });
 
@@ -112,18 +136,21 @@ class _MapScreenState extends State<MapScreen> {
         ? <Marker>[]
         : [
             Marker(
-              markerId: const MarkerId('user_location'),
-              position: LatLng(userPosition.latitude, userPosition.longitude),
-              icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
-              infoWindow: const InfoWindow(title: 'Tu ubicación actual'),
+              point: latlong.LatLng(userPosition.latitude, userPosition.longitude),
+              width: 44,
+              height: 44,
+              child: const Tooltip(
+                message: 'Tu ubicación actual',
+                child: Icon(Icons.my_location, size: 34, color: Colors.blueAccent),
+              ),
             ),
           ];
 
-    return {
+    return [
       ...routeMarkers,
       ...placeMarkers,
       ...userMarkers,
-    };
+    ];
   }
 
   Future<void> _loadUserLocation() async {
@@ -139,7 +166,7 @@ class _MapScreenState extends State<MapScreen> {
         _userPosition = position;
         _isLoadingLocation = false;
       });
-      await _moveCameraToUser(position);
+      _moveCameraToUser(position);
     } on LocationException catch (error) {
       if (!mounted) return;
       setState(() {
@@ -150,12 +177,8 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  Future<void> _moveCameraToUser(Position position) async {
-    final controller = _mapController;
-    if (controller == null) return;
-    await controller.animateCamera(
-      CameraUpdate.newLatLngZoom(LatLng(position.latitude, position.longitude), 14.5),
-    );
+  void _moveCameraToUser(Position position) {
+    _mapController.move(latlong.LatLng(position.latitude, position.longitude), 14.5);
   }
 
   Future<void> _openAppSettings() async {
@@ -217,8 +240,7 @@ class _LocationStatusCard extends StatelessWidget {
       return _StatusSurface(
         icon: const Icon(Icons.my_location, color: Colors.green),
         title: 'Ubicación activada',
-        message:
-            'Lat ${position.latitude.toStringAsFixed(4)}, lng ${position.longitude.toStringAsFixed(4)}',
+        message: 'Lat ${position.latitude.toStringAsFixed(4)}, lng ${position.longitude.toStringAsFixed(4)}',
       );
     }
 

@@ -15,9 +15,9 @@ class RouteDetailScreen extends StatefulWidget {
 class _RouteDetailScreenState extends State<RouteDetailScreen> {
   final placesService = PlacesService();
   final assistantService = AssistantService();
+  final String mood = 'turismo relajado';
   int minutes = 120;
   double budget = 40;
-  String mood = 'turismo relajado';
 
   @override
   Widget build(BuildContext context) {

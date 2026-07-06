@@ -4,13 +4,11 @@ import '../widgets/route_card.dart';
 import 'route_detail_screen.dart';
 
 class HomeScreen extends StatelessWidget {
-  HomeScreen({super.key});
-
-  final routesService = RoutesService();
+  const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final routes = routesService.getRoutes();
+    final routes = RoutesService().getRoutes();
     return Scaffold(
       appBar: AppBar(title: const Text('Rutas Panamá')),
       body: Column(

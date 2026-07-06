@@ -9,14 +9,14 @@ Rutas Panamá es un concierge turístico inteligente que recomienda rutas, lugar
 - Home con rutas turísticas iniciales.
 - Detalle de ruta.
 - Asistente básico.
-- Mapa con Google Maps.
+- Mapa interno sin API Key usando OpenStreetMap para pruebas de usuario.
 - Marcadores y paradas recomendadas.
-- Botón para abrir navegación en Google Maps.
+- Botón para abrir navegación externa en Google Maps.
 
 ## Stack objetivo
 - Flutter
-- Google Maps
-- Google Places API
+- Mapa interno con OpenStreetMap para el MVP sin llaves externas
+- Google Places API para una fase posterior
 - Supabase
 
 ## Sprint 0: ejecutar en Android
@@ -35,13 +35,9 @@ flutter test
 flutter run
 ```
 
-Para probar el mapa sin quemar llaves en Git, configura la llave de Google Maps en `android/local.properties`, archivo que está ignorado por Git:
+Para el MVP actual no se requiere API Key para renderizar el mapa interno. El mapa usa OpenStreetMap para que el APK de QA funcione sin configurar secretos de Google Cloud.
 
-```properties
-GOOGLE_MAPS_API_KEY=tu_api_key_android_restringida
-```
-
-También puedes usar una variable de entorno `GOOGLE_MAPS_API_KEY` en el entorno de build. No subas llaves reales de Google, Supabase ni OpenAI al repositorio.
+El botón "Cómo llegar" abre Google Maps externo en el teléfono. No subas llaves reales de Google, Supabase ni OpenAI al repositorio.
 
 ## Primer paso con Codex
 Abrir el proyecto en Codex y ejecutar la tarea:
